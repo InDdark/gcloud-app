@@ -1,4 +1,6 @@
+
 const express = require('express');
+const os  = require('os')
 //const bodyParser = require('body-parser')
 // const {check, validationResult, header} = require('express-validator')
 const app = express();
@@ -17,17 +19,17 @@ const multer = require('multer');
 const emailArray = [];
 // const output = 'making it global'
 
-
+// app.use('/static', express.static('public'));
 
 // const output = fs.createWriteStream('output.csv', {flags: 'a'});
 
-if(fs.existsSync('./output.csv')){
-    fs.unlinkSync('./output.csv');
+if(fs.existsSync(os.tmpdir()+'/output.csv')){
+    fs.unlinkSync(os.tmpdir() + '/output.csv');
 } 
-fs.createWriteStream('output.csv', {flags: 'a'});
+fs.createWriteStream(os.tmpdir()+'/output.csv', {flags: 'a'});
 
 
-const upload = multer({dest:'upload/'});    
+const upload = multer({dest: os.tmpdir() + '/upload/'});    
 
 
 async function isEmailValid(email) {
@@ -43,6 +45,7 @@ async function isEmailValid(email) {
 app.get('/',(req,res) => {
     res.sendFile(path.join(__dirname, '/views/index.html'));
 })
+
 
 
 
@@ -65,7 +68,7 @@ async function checkEmail(emailArray, callback){
            if(valid){
              //  console.log("Valid: " + emailArray[i]);
                
-               await fs.appendFile('output.csv', String(emailArray[i]) + '\n', (err) => {
+               await fs.appendFile(os.tmpdir() + '/output.csv', String(emailArray[i]) + '\n', (err) => {
                     if(err) console.log("[ERROR]: while uploading..")
                });
                
@@ -87,7 +90,7 @@ async function checkEmail(emailArray, callback){
            }
      }
      console.log("Exiting foor loop ");
-     await fs.appendFile('output.csv', 'END\n', (err) => {
+     await fs.appendFile(os.tmpdir() + '/output.csv', 'END\n', (err) => {
         if(err) console.log("[ERROR]: while uploading..")
    });
      callback();
@@ -95,10 +98,10 @@ async function checkEmail(emailArray, callback){
 }
 
 app.post('/submit', upload.single('myfile'), async (req, res) => {
-     
+      console.log("HERE");
    //  console.log(req.file) 
      //console.log(req.path);
-          fs.truncateSync('./output.csv', 0, function(){console.log('done')})
+         // fs.truncateSync('./output.csv', 0, function(){console.log('done')})
           
            csv.parseFile(req.file.path).on("data", (data) => {
                emailArray.push(data); 
@@ -108,7 +111,7 @@ app.post('/submit', upload.single('myfile'), async (req, res) => {
               
               checkEmail(emailArray, () => {
                  console.log('Callback Func is called');
-                 setTimeout(() => {  res.download("./output.csv", "VerifiedEmailList.csv", (err) => {
+                 setTimeout(() => {  res.download(os.tmpdir() + "/output.csv", "VerifiedEmailList.csv", (err) => {
                     console.log(err);
                  }) }, 8000);
                 // res.sendFile(path.join(__dirname, '/views/index.html')); 
